@@ -1,5 +1,24 @@
 import scrapy
 from pathlib import Path
+from pymongo import MongoClient
+import datetime
+
+
+
+client = MongoClient("mongodb+srv://adityakshah66:GJU7ErWveUkQYfI0@cluster0.8blwv.mongodb.net/")
+db = client.scrapy
+
+def InsertToDb(page,title,imagesrc, rating, price):
+    posts = db[page] #Database name
+    doc = {
+        "title": title,
+        "imagesrc": imagesrc,
+        "rating": rating,
+        "price" : price,
+        "date": datetime.datetime.now(tz=datetime.timezone.utc)
+    }
+    post_id  = posts.insert_one(doc).inserted_id
+    return post_id
 
 class BooksSpider(scrapy.Spider):
     name = "books"
@@ -26,11 +45,14 @@ class BooksSpider(scrapy.Spider):
         for item in a:
             title = item.css("h3>a::text").get()
             image = item.css(".image_container img")
+            image = image.attrib['src']
             rating = item.css(".star-rating").attrib["class"]
+            rating = rating.split(" ")[-1]
             price = item.css(".price_color::text").get()
             stock = item.css(".availability")
-            print(image.attrib['src'])
-            print(title)
-            print(rating.split(" ")[-1])
-            print(price)
-            print(stock)
+            # print(image.attrib['src'])
+            # print(title)
+            # print(rating.split(" ")[-1])
+            # print(price)
+            # print(stock)
+            InsertToDb(page,title,image, rating, price)
